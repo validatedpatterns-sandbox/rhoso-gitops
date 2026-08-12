@@ -15,7 +15,6 @@ clusterGroup:
   applications:
     rhoso-gitops:
       name: rhoso-gitops
-      namespace: rhoso-gitops-standalone
       argoProject: rhoso-gitops-standalone
       path: charts/all/rhoso-gitops
       extraValueFiles:

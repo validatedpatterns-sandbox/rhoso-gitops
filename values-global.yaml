@@ -2,8 +2,6 @@
 global:
   pattern: rhoso-gitops
   singleArgoCD: true
-  secretLoader:
-    disabled: false
   secretStore:
     backend: "none"
   options:
@@ -14,7 +12,6 @@ main:
   clusterGroupName: standalone
   multiSourceConfig:
     enabled: true
-    clusterGroupChartVersion: "0.9.*"
   gitops:
     customArgoYaml: |
       resourceHealthChecks:
