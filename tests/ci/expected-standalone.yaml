@@ -1,0 +1,5 @@
+---
+operator:
+  channel: stable-v1.0
+  startingCSV: openstack-operator.v1.0.16
+  installPlanApproval: Manual

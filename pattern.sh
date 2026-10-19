@@ -114,6 +114,7 @@ podman run -it --rm --pull=newer \
     -e TOKEN_SECRET \
     -e UUID_FILE \
     -e VALUES_SECRET \
+    -e 'VP_*' \
     "${PKI_HOST_MOUNT_ARGS[@]}" \
     -v "$(pwd -P)":"$(pwd -P)" \
     -v "${HOME}":"${HOME}" \

@@ -8,4 +8,6 @@ values-secret.yaml.*
 pattern-vault.init
 vault.init
 super-linter.log
+tests/ci/.results/
+__pycache__/
 common/pattern-vault.init
