@@ -1,0 +1,49 @@
+---
+# Template for the k-orc-resources Argo CD Application, applied by the CI
+# tests (tests/ci/k-orc/test_k_orc.py).
+#
+# The CI tests fill in spec.source.repoURL and spec.source.targetRevision
+# (deployment-specific: the pattern's own repository and branch) and create
+# this Application in the namespace of the Argo CD instance managing the
+# pattern. Its source path (tests/ci/k-orc/resources) holds the credentials
+# Job/RBAC and the ORC custom resources.
+#
+# Until the ORC CRDs are established (k-orc-crds.yaml), Argo CD rejects this
+# Application's sync plan ("one or more synchronization tasks are not valid");
+# the sync retries below make it converge once the CRDs are in place.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: k-orc-resources
+  # Overwritten by the CI tests with the discovered Argo CD namespace.
+  namespace: vp-gitops
+  labels:
+    # Identifies applications owned by CI features. The pattern inventory
+    # test excludes applications with this label.
+    validatedpatterns.io/ci-feature: k-orc
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io/background
+spec:
+  project: default
+  source:
+    # Filled in by the CI tests.
+    repoURL: ""
+    path: tests/ci/k-orc/resources
+    targetRevision: ""
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openstack
+  syncPolicy:
+    automated: {}
+    retry:
+      # Until the ORC CRDs are established the sync plan is rejected; short
+      # retries cover that window, and exhaust quickly enough that a new
+      # revision (or a re-created Application) re-triggers a fresh sync
+      # promptly.
+      limit: 12
+      backoff:
+        duration: 10s
+        factor: 2
+        maxDuration: 1m
+    syncOptions:
+      - Prune=false

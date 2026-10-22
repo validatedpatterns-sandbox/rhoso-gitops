@@ -1,0 +1,30 @@
+---
+# CirrOS image for the k-orc smoke stack, downloaded by ORC from the official
+# CirrOS download site. The sha256 hash pins the exact content (and makes ORC
+# download the image itself instead of using Glance web-download).
+#
+# When bumping to a newer CirrOS release, update both the URL and the hash
+# from https://download.cirros-cloud.net/<version>/SHA256SUMS.
+apiVersion: openstack.k-orc.cloud/v1alpha1
+kind: Image
+metadata:
+  name: cirros
+  namespace: openstack
+spec:
+  cloudCredentialsRef:
+    cloudName: default
+    secretName: orc-cloud-config
+  managementPolicy: managed
+  resource:
+    tags:
+      - k-orc-ci
+    properties:
+      architecture: x86_64
+    content:
+      containerFormat: bare
+      diskFormat: qcow2
+      download:
+        url: https://download.cirros-cloud.net/0.6.3/cirros-0.6.3-x86_64-disk.img
+        hash:
+          algorithm: sha256
+          value: 7d6355852aeb6dbcd191bcda7cd74f1536cfe5cbf8a10495a7283a8396e4b75b

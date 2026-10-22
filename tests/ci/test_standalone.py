@@ -3,12 +3,21 @@ from __future__ import annotations
 import os
 import subprocess
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, TypedDict
+from typing import TypedDict
 
 import pytest
 import yaml
 from openshift.dynamic.exceptions import NotFoundError, ResourceNotFoundError
+
+# k-orc (ORC) integration tests. The conftest.py in this directory puts the
+# hyphenated k-orc directory on sys.path. Star-import pulls in the test
+# functions and their module-scoped fixture; helpers redefined below
+# (wait_until etc.) are unaffected because the imported functions bind to
+# their own module globals.
+from test_k_orc import *  # noqa: F401, F403, E402, RUF100
+from test_k_orc import CI_FEATURE_LABEL
 
 PATTERN_API_VERSION = "gitops.hybrid-cloud-patterns.io/v1alpha1"
 APPLICATION_API_VERSION = "argoproj.io/v1alpha1"
@@ -37,7 +46,7 @@ TEST_TIMEOUT = float(os.getenv("VP_RHOSO_TEST_TIMEOUT", "300"))
 START_TIME = time.monotonic()
 
 
-def load_yaml(path: Path) -> dict:
+def load_yaml(path: Path) -> dict:  # type: ignore[no-redef]
     with path.open(encoding="utf-8") as yaml_file:
         return yaml.safe_load(yaml_file)
 
@@ -151,7 +160,9 @@ def assert_field(actual: object, expected: object, context: str) -> None:
     assert actual == expected, f"{context}: expected {expected!r}, got {actual!r}"
 
 
-def get_resource(client, api_version: str, kind: str, namespace: str, name: str):
+def get_resource(  # type: ignore[no-redef]
+    client, api_version: str, kind: str, namespace: str, name: str
+):
     resource = client.resources.get(api_version=api_version, kind=kind)
     try:
         return resource.get(name=name, namespace=namespace)
@@ -167,6 +178,12 @@ def list_application_names(client, namespace: str) -> list[str]:
     return sorted(
         application.metadata.name
         for application in applications.get(namespace=namespace).items or []
+        # Applications owned by CI features (e.g. k-orc) are created by the
+        # tests themselves, not by the pattern chart: exclude them from the
+        # pattern inventory.
+        if not (getattr(application.metadata, "labels", None) or {}).get(
+            CI_FEATURE_LABEL
+        )
     )
 
 
@@ -215,7 +232,7 @@ def child_application_names(client, namespace: str, parent_name: str) -> list[st
     return sorted({child["name"] for child in children})
 
 
-def condition_status(resource, condition_type: str) -> str | None:
+def condition_status(resource, condition_type: str) -> str | None:  # type: ignore[no-redef]
     conditions = getattr(getattr(resource, "status", None), "conditions", None) or []
     for condition in conditions:
         if getattr(condition, "type", None) == condition_type:
@@ -223,7 +240,7 @@ def condition_status(resource, condition_type: str) -> str | None:
     return None
 
 
-def wait_until(check: Callable[[], None], description: str) -> None:
+def wait_until(check: Callable[[], None], description: str) -> None:  # type: ignore[no-redef]
     last_error = "condition did not run"
     while True:
         try:
@@ -310,14 +327,7 @@ def test_application_inventory(
             f"{sorted(deployed_helm_applications)}"
         )
 
-        applications = openshift_dyn_client.resources.get(
-            api_version=APPLICATION_API_VERSION,
-            kind="Application",
-        )
-        actual = sorted(
-            application.metadata.name
-            for application in applications.get(namespace=namespace).items or []
-        )
+        actual = list_application_names(openshift_dyn_client, namespace)
         assert actual == expected, (
             f"Application inventory in {namespace}: expected {expected}, "
             f"got {actual}; missing {sorted(set(expected) - set(actual))}, "
@@ -463,9 +473,7 @@ def test_operator_subscription(
         subscriptions = application_resources(application, "Subscription")
         assert (
             subscriptions
-        ), "Application {}/openstack-operator has no deployed Subscriptions".format(
-            namespace
-        )
+        ), f"Application {namespace}/openstack-operator has no deployed Subscriptions"
         assert len(subscriptions) == 1, (
             "Expected one OpenStack Subscription, got "
             f"{[subscription['name'] for subscription in subscriptions]}"
@@ -551,9 +559,7 @@ def test_openstack_operator_ready(openshift_dyn_client, pattern_configuration):
         openstack_resources = application_resources(application, "OpenStack")
         assert (
             openstack_resources
-        ), "Application {}/openstack-operator-cr has no deployed OpenStack CR".format(
-            namespace
-        )
+        ), f"Application {namespace}/openstack-operator-cr has no deployed OpenStack CR"
         assert len(openstack_resources) == 1, (
             "Expected one OpenStack CR, got "
             f"{[resource['name'] for resource in openstack_resources]}"
@@ -601,8 +607,8 @@ def test_controlplane_ready(openshift_dyn_client, pattern_configuration):
             "OpenStackControlPlane",
         )
         assert controlplane_resources, (
-            "Application {}/openstack-controlplane has no deployed "
-            "OpenStackControlPlane resources".format(namespace)
+            f"Application {namespace}/openstack-controlplane has no deployed "
+            "OpenStackControlPlane resources"
         )
         for controlplane_resource in controlplane_resources:
             controlplane_namespace = controlplane_resource["namespace"] or "openstack"
@@ -653,12 +659,12 @@ def test_dataplane_ready(openshift_dyn_client, pattern_configuration):
             "OpenStackDataPlaneDeployment",
         )
         assert node_sets, (
-            "Application {}/openstack-dataplane has no deployed "
-            "OpenStackDataPlaneNodeSet resources".format(namespace)
+            f"Application {namespace}/openstack-dataplane has no deployed "
+            "OpenStackDataPlaneNodeSet resources"
         )
         assert deployments, (
-            "Application {}/openstack-dataplane has no deployed "
-            "OpenStackDataPlaneDeployment resources".format(namespace)
+            f"Application {namespace}/openstack-dataplane has no deployed "
+            "OpenStackDataPlaneDeployment resources"
         )
         for node_set in node_sets:
             dataplane_namespace = node_set["namespace"] or "openstack"

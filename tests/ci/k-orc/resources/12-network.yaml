@@ -1,0 +1,16 @@
+---
+# Tenant network for the k-orc smoke stack.
+apiVersion: openstack.k-orc.cloud/v1alpha1
+kind: Network
+metadata:
+  name: k-orc-network
+  namespace: openstack
+spec:
+  cloudCredentialsRef:
+    cloudName: default
+    secretName: orc-cloud-config
+  managementPolicy: managed
+  resource:
+    description: k-orc CI smoke test network
+    tags:
+      - k-orc-ci
