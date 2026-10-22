@@ -1,0 +1,25 @@
+---
+# Test flavor for the k-orc smoke stack.
+#
+# NOTE on disk size: the reference CI environment's single EDPM compute
+# reports only 9GB of placement disk inventory (with a 0.9 allocation
+# ratio), so the root disk is capped at 8GB to fit. If your environment has
+# more disk, adjust this value (the flavor disk is immutable on the ORC
+# object: delete k-orc-flavor, k-orc-port and k-orc-server and let Argo
+# re-create them after changing it).
+apiVersion: openstack.k-orc.cloud/v1alpha1
+kind: Flavor
+metadata:
+  name: k-orc-flavor
+  namespace: openstack
+spec:
+  cloudCredentialsRef:
+    cloudName: default
+    secretName: orc-cloud-config
+  managementPolicy: managed
+  resource:
+    name: m1.xsmall
+    description: k-orc CI smoke test flavor
+    ram: 1024
+    vcpus: 2
+    disk: 8

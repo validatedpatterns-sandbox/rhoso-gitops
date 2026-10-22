@@ -1,0 +1,20 @@
+---
+# Smoke test server: boots the managed CirrOS image with the managed flavor
+# on the managed port/network. This VM is steady-state (it stays running in
+# the CI environment); success is asserted by the ORC Available condition.
+apiVersion: openstack.k-orc.cloud/v1alpha1
+kind: Server
+metadata:
+  name: k-orc-server
+  namespace: openstack
+spec:
+  cloudCredentialsRef:
+    cloudName: default
+    secretName: orc-cloud-config
+  managementPolicy: managed
+  resource:
+    name: k-orc-server
+    imageRef: cirros
+    flavorRef: k-orc-flavor
+    ports:
+      - portRef: k-orc-port

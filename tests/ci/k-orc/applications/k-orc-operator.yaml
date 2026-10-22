@@ -1,0 +1,57 @@
+---
+# Deploys the ORC controller from the official ORC Helm chart published on
+# quay.io.
+#
+# This Application is created by the "k-orc" application rendered by the
+# rhoso-gitops chart (see charts/all/rhoso-gitops/values.yaml). It runs after
+# the CRDs (k-orc-crds.yaml) and before any ORC custom resources are applied.
+#
+# Pruning is intentionally disabled: GitOps removal of manifests must not
+# delete the controller or its resources.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: k-orc-operator
+  # The namespace must match the Argo CD instance watching Applications.
+  namespace: vp-gitops
+  labels:
+    # Identifies applications owned by CI features. The pattern inventory
+    # test excludes applications with this label.
+    validatedpatterns.io/ci-feature: k-orc
+  annotations:
+    argocd.argoproj.io/sync-wave: "-1"
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io/background
+spec:
+  project: default
+  source:
+    # Helm OCI chart: <registry>/<chart path> is split between repoURL/chart.
+    repoURL: quay.io
+    chart: orc/helm/orc
+    # Keep in sync with k-orc-crds.yaml. Both charts must use the same
+    # released version.
+    targetRevision: 3.0.0-pre1
+    helm:
+      values: |
+        # Do not use the upstream default priority class: it is reserved for
+        # system components on OpenShift. Drop the chart's fixed runAsUser/
+        # runAsGroup as well: OpenShift restricted-v2 SCCs require UIDs from
+        # the namespace's allocated range (the pod keeps runAsNonRoot).
+        priorityClassName: ""
+        containerSecurityContext:
+          runAsUser: null
+          runAsGroup: null
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: orc-system
+  syncPolicy:
+    automated: {}
+    retry:
+      limit: 20
+      backoff:
+        duration: 30s
+        factor: 2
+        maxDuration: 5m
+    syncOptions:
+      - Prune=false
+      - CreateNamespace=true
