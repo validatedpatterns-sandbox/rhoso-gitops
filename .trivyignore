@@ -3,5 +3,7 @@ AVD-KSV-0020 # Container 'apache' of Deployment 'hello-world' should set 'securi
 AVD-KSV-0021 # Container 'apache' of Deployment 'hello-world' should set 'securityContext.runAsGroup' > 10000. Not needed on OCP
 AVD-KSV-0014 # Readonly root filesystem does not work with httpd ubi images
 AVD-KSV-0125 # Container apache in deployment hello-world (namespace: default) uses an image from an untrusted registry. registry.access.redhat.com is trusted
+AVD-KSV-0113 # The k-orc credentials Role must read RHOSO config secrets and manage the ORC cloud-config secret in the openstack namespace; the service account is dedicated to the credentials Job
+AVD-KSV-0013 # The pattern utility container is only published as :latest; the credentials Job is short-lived and CI-only
 
 

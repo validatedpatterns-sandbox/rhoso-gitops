@@ -1,0 +1,24 @@
+---
+# Subnet for the k-orc smoke stack.
+#
+# The CIDR is the one knob most likely to need adjusting for a given
+# deployment: change it here if 192.168.150.0/24 overlaps with existing
+# networks. Note that cidr is immutable on the ORC object: after changing it,
+# delete the Subnet (and the objects depending on it: k-orc-port,
+# k-orc-server) and let Argo re-create them.
+apiVersion: openstack.k-orc.cloud/v1alpha1
+kind: Subnet
+metadata:
+  name: k-orc-subnet
+  namespace: openstack
+spec:
+  cloudCredentialsRef:
+    cloudName: default
+    secretName: orc-cloud-config
+  managementPolicy: managed
+  resource:
+    name: k-orc-subnet
+    description: k-orc CI smoke test subnet
+    networkRef: k-orc-network
+    ipVersion: 4
+    cidr: 192.168.150.0/24

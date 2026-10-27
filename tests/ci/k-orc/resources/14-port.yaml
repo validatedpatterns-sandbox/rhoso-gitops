@@ -1,0 +1,22 @@
+---
+# Explicit port for the k-orc smoke stack server. ORC requires ports to be
+# created explicitly (no implicit port creation on the server).
+apiVersion: openstack.k-orc.cloud/v1alpha1
+kind: Port
+metadata:
+  name: k-orc-port
+  namespace: openstack
+spec:
+  cloudCredentialsRef:
+    cloudName: default
+    secretName: orc-cloud-config
+  managementPolicy: managed
+  resource:
+    name: k-orc-port
+    description: k-orc CI smoke test port
+    networkRef: k-orc-network
+    tags:
+      - k-orc-ci
+    # No fixed address: OpenStack allocates one from k-orc-subnet.
+    addresses:
+      - subnetRef: k-orc-subnet

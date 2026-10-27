@@ -38,6 +38,10 @@ jobs:
           VALIDATE_JSON_PRETTIER: false
           VALIDATE_MARKDOWN_PRETTIER: false
           VALIDATE_PYTHON_PYLINT: false
+          # ruff (I001) already enforces import sorting with a 120-char line
+          # length; isort's 88-char limit cannot fit the noqa'd star imports
+          # needed for the pytest conftest fixtures.
+          VALIDATE_PYTHON_ISORT: false
           VALIDATE_SHELL_SHFMT: false
           VALIDATE_YAML: false
           VALIDATE_KUBERNETES_KUBECONFORM: false
