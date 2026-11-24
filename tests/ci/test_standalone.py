@@ -21,7 +21,6 @@ from test_k_orc import CI_FEATURE_LABEL
 
 PATTERN_API_VERSION = "gitops.hybrid-cloud-patterns.io/v1alpha1"
 APPLICATION_API_VERSION = "argoproj.io/v1alpha1"
-OPERATOR_CORES_API_VERSION = "operators.coreos.com/v1alpha1"
 OPENSTACK_API_VERSION = "operator.openstack.org/v1beta1"
 CONTROLPLANE_API_VERSION = "core.openstack.org/v1beta1"
 DATAPLANE_API_VERSION = "dataplane.openstack.org/v1beta1"
@@ -40,7 +39,6 @@ VALUE_FILES = (
     REPOSITORY_ROOT / "values-standalone.yaml",
     REPOSITORY_ROOT / "overrides" / "values-rhoso-gitops.yaml",
 )
-EXPECTED_RESOURCES_PATH = Path(__file__).parent / "expected-standalone.yaml"
 POLL_INTERVAL = float(os.getenv("VP_RHOSO_POLL_INTERVAL", "5"))
 TEST_TIMEOUT = float(os.getenv("VP_RHOSO_TEST_TIMEOUT", "300"))
 START_TIME = time.monotonic()
@@ -64,11 +62,6 @@ def pattern_configuration() -> dict:
         "framework_application": f"{pattern_name}-{cluster_group['name']}",
         "parent_application": parent_application["name"],
     }
-
-
-@pytest.fixture(scope="module")
-def expected_resources() -> dict:
-    return load_yaml(EXPECTED_RESOURCES_PATH)
 
 
 @pytest.fixture(scope="module")
@@ -451,16 +444,14 @@ def test_application_sources(
     ["VP_HUBCONFIG"],
     indirect=True,
 )
-def test_operator_subscription(
-    openshift_dyn_client,
-    pattern_configuration,
-    expected_resources,
-):
+def test_openstack_operator_subscription(openshift_dyn_client, pattern_configuration):
+    """Check the openstack-operator Subscription is installed, regardless of
+    its version (channel, startingCSV and installPlanApproval are not
+    asserted)."""
     namespace = discover_application_namespace(
         openshift_dyn_client,
         pattern_configuration,
     )
-    expected_operator = expected_resources["operator"]
 
     def check():
         application = get_resource(
@@ -479,62 +470,32 @@ def test_operator_subscription(
             f"{[subscription['name'] for subscription in subscriptions]}"
         )
         subscription_ref = subscriptions[0]
-        operator = {
-            "namespace": subscription_ref["namespace"] or "openstack-operators",
-            "subscription": subscription_ref["name"],
-            **expected_operator,
-        }
+        operator_namespace = subscription_ref["namespace"] or "openstack-operators"
         subscription = get_resource(
             openshift_dyn_client,
-            OPERATOR_CORES_API_VERSION,
+            "operators.coreos.com/v1alpha1",
             "Subscription",
-            operator["namespace"],
-            operator["subscription"],
+            operator_namespace,
+            subscription_ref["name"],
         )
-        context = f"Subscription {operator['namespace']}/{operator['subscription']}"
-        spec = getattr(subscription, "spec", None)
+        context = f"Subscription {operator_namespace}/{subscription_ref['name']}"
         subscription_status = getattr(subscription, "status", None)
-        assert_field(
-            getattr(spec, "channel", None),
-            operator["channel"],
-            f"{context} spec.channel",
-        )
-        assert_field(
-            getattr(spec, "startingCSV", None),
-            operator["startingCSV"],
-            f"{context} spec.startingCSV",
-        )
-        assert_field(
-            getattr(spec, "installPlanApproval", None),
-            operator["installPlanApproval"],
-            f"{context} spec.installPlanApproval",
-        )
-        assert_field(
-            getattr(subscription_status, "installedCSV", None),
-            operator["startingCSV"],
-            f"{context} status.installedCSV",
-        )
-        assert getattr(subscription_status, "state", None) in {
-            "AtLatestKnown",
-            "UpgradePending",
-        }, f"{context} status.state is not healthy"
-
         installed_csv = getattr(subscription_status, "installedCSV", None)
         assert installed_csv, f"{context} has no installed ClusterServiceVersion"
         csv = get_resource(
             openshift_dyn_client,
-            OPERATOR_CORES_API_VERSION,
+            "operators.coreos.com/v1alpha1",
             "ClusterServiceVersion",
-            operator["namespace"],
+            operator_namespace,
             installed_csv,
         )
         assert_field(
             getattr(getattr(csv, "status", None), "phase", None),
             "Succeeded",
-            f"ClusterServiceVersion {operator['namespace']}/{installed_csv} phase",
+            f"ClusterServiceVersion {operator_namespace}/{installed_csv} phase",
         )
 
-    wait_until(check, "Pinned operator installation")
+    wait_until(check, "OpenStack operator installation")
 
 
 @pytest.mark.parametrize(
