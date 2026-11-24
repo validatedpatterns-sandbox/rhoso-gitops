@@ -1,6 +1,6 @@
 {
 	"$schema": "https://json-schema.org/draft/2019-09/schema",
-	"$id": "https://github.com/validatedpatterns-sandbox/rhoso-gitops/charts/all/rhoso-gitops/values.schema.json",
+	"$id": "https://github.com/validatedpatterns/rhoso-gitops/charts/all/rhoso-gitops/values.schema.json",
 	"title": "rhoso-gitops Helm chart values",
 	"description": "Validated against templates/ and the documentation block in values.yaml.",
 	"type": "object",
