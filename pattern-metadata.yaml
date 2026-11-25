@@ -6,10 +6,10 @@ description: >-
   rhoso-gitops meta-chart and upstream Kustomize example overlays.
 pattern_version: "0.1.0"
 display_name: RHOSO GitOps
-repo_url: https://github.com/validatedpatterns-sandbox/rhoso-gitops
+repo_url: https://github.com/validatedpatterns/rhoso-gitops
 docs_repo_url: https://github.com/validatedpatterns/docs
-issues_url: https://github.com/validatedpatterns-sandbox/rhoso-gitops/issues
-docs_url: https://github.com/validatedpatterns-sandbox/rhoso-gitops#readme
+issues_url: https://github.com/validatedpatterns/rhoso-gitops/issues
+docs_url: https://github.com/validatedpatterns/rhoso-gitops#readme
 tier: tested
 owners: cjeanner, pinikomarov
 requirements:
